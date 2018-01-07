@@ -1,54 +1,72 @@
-var text = [];
- text[0] = '# heading';
- text[1] = 'paragraph wiht __bold__ and *italic*';
- text[2] = '## heading2';
- text[3] = 'paragraph wiht **bold** and *italic*';
- text[4] = '----';
- text[5] = 'paragraph wiht __bold__ and *italic*';
- text[6] = '####heading ----'
- text[7] = 'Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo. Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt. Neque porro quisquam est, qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit, sed quia non numquam eius modi tempora incidunt ut labore et dolore magnam aliquam quaerat voluptatem. Ut enim ad minima veniam, quis nostrum exercitationem ullam corporis suscipit laboriosam, nisi ut aliquid ex ea commodi consequatur? Quis autem vel eum iure reprehenderit qui in ea voluptate velit esse quam nihil molestiae consequatur, vel illum qui dolorem eum fugiat quo voluptas nulla pariatur?';
-  text[8] = 'Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo. Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt. Neque porro quisquam est, qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit, sed quia non numquam eius modi tempora incidunt ut labore et dolore magnam aliquam quaerat voluptatem. Ut enim ad minima veniam, quis nostrum exercitationem ullam corporis suscipit laboriosam, nisi ut aliquid ex ea commodi consequatur? Quis autem vel eum iure reprehenderit qui in ea voluptate velit esse quam nihil molestiae consequatur, vel illum qui dolorem eum fugiat quo voluptas nulla pariatur?';
-	
-function test()
+var text = '';
+	var lines = [];
+function AddListeners()
 {
-	var body = document.getElementsByTagName("BODY")[0];
-	for(i = 0; text[i] != null; i++)
+	document.getElementById('files').addEventListener('change', handleFileSelect, false);
+}
+function AddDocumentLinesToArray(doc) {
+
+	var lines = doc.split('\n');
+	ParseArrayAndAddToElement(lines,"content");
+}
+// function ParseArrayAndAddToBody(mdarray)
+// {
+// 	var body = document.getElementsByTagName("BODY")[0];
+// 	for(i = 0; mdarray[i] != null; i++)
+// 	{
+// 		body.innerHTML += parseLine(text[i]).toString();
+// 		//console.log(parseLine(mdarray[i]));
+// 	}
+// }
+function ParseArrayAndAddToElement(mdarray,id = 'content')
+{
+	for(i = 0; mdarray[i] != null; i++)
 	{
-		body.innerHTML += parseLine(text[i]).toString();
-		console.log(parseLine(text[i]));
+		document.getElementById(id).innerHTML += parseLine(mdarray[i]).toString();
+		//console.log(parseLine(mdarray[i]));
 	}
 }
 function parseLine(line)
 {
-	/*BlockLevel*/
-	// CheckHeading
-	// TODO Function for CheckLineType(); Change this to switch(linetype)
-	if (line.charAt(0) == '='|line.charAt(0) == '#')
-	{return BuildHeading(line);}
-
-	else if (line.charAt(0) == '-' &&
-					 line.charAt(1) == '-' &&
-					 line.charAt(2) == '-'
-					)
+	switch(CheckLineType(line))
 	{
-		return BuildHR();
+		case 'HEADING':
+			return BuildHeading(line);
+			break;
+		case 'HR':
+			return BuildHR();
+			break;
+		case 'PARAGRAPH':
+			return BuildParagraph(BuildEmAndStrong(line));
+			break;
+		default:
+			return "This element has not yet been implemented";
 	}
-	else
-	return BuildParagraph(BuildEmAndStrong(line));
+	/*BlockLevel*/
 	// CheckBlockQuotes
 	// CheckHR
 	// CheckTOC
 	// CheckLineBreak
-	// CheckEmAndStrong
-	// CheckItalic
 	// CheckMonospace
 	// Check
-	// if charAt(0) = '#,=', check next char,
-	// if its not '#,=' its a <h1>
-	// else
-	// check to see if the next
-	// line also contains part of this block
 }
+function CheckLineType(mdline)
+{
+	if (mdline.charAt(0) == '='|mdline.charAt(0) == '#')
+	{
+		return 'HEADING';
+	}
+	else if (mdline.charAt(0) == '-' &&
+					 mdline.charAt(1) == '-' &&
+					 mdline.charAt(2) == '-'
+					)
+	{
+		return 'HR';
+	}
+	else
+		return 'PARAGRAPH';
+}
+
 function BuildHeading(line)
 {
 	var i = 0;
@@ -105,21 +123,42 @@ var HR = function()
 	return String.raw`<hr/>`+'\n';
 }
 /*Utility Functions*/
-var StripSpaces = function(txt,type = '_')
+var StripSpaces = function(txt,type = '-')
 {
-	// var space = /[^\s]*[\s][^\s]*/;
-	// return txt.replace(space,type);
-	for (i =0; i<txt.length;i++)
-	{
-		//(txt.charAt(i)== ' ')?txt = txt.substr(0,i-1) + type + txt.substr(i+1):txt=txt;
-	}
+	txt = txt.replace(/\s+/g, type);
 	return txt;
 }
 var Truncate = function(txt,maxLength=35)
 {
-	//return (txt.length > maxLength)?txt.substring(0,maxLength):txt;
+	return (txt.length > maxLength)?txt.substring(0,maxLength):txt;
 }
 var Id = function (txt)
 {
-	//return Truncate(StripSpaces(txt));
+	return Truncate(StripSpaces(txt));
+}
+function startReload()
+{
+	setInterval(function() {
+	  location.reload();
+	}, 5000);
+}
+
+/*FileIO*/
+function handleFileSelect(evt) {
+	var file = evt.target.files[0]; // FileList object
+	// files is a FileList of File objects. List some properties.
+	var lines = [];
+	if (file){
+			 var reader = new FileReader();
+			 reader.onload = function(e) {
+					 var contents = e.target.result;
+					 text= contents.toString();
+					 console.log(String.raw`${text}`);
+					 AddDocumentLinesToArray(text);
+			 };
+			 reader.readAsText(file);
+	 }
+	 else {
+			 alert("Failed to load file");
+	 }
 }
